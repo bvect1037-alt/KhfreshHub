@@ -6,8 +6,9 @@ local Scripts = {
 }
 
 local url = Scripts[PlaceId]
+
 if url then
 	loadstring(game:HttpGet(url))()
 else
-	warn("Game No Support")
+	game.Players.LocalPlayer:Kick("Game No Support")
 end
