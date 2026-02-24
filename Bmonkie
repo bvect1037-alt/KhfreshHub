@@ -1,0 +1,13 @@
+local PlaceId = game.PlaceId
+
+local Scripts = {
+	[98502499119821] = "https://raw.githubusercontent.com/bvect1037-alt/KhfreshHub/refs/heads/main/HeavyWeightFishing",
+	[130594398886540] = "https://raw.githubusercontent.com/bvect1037-alt/KhfreshHub/refs/heads/main/Garden_Horizions",
+}
+
+local url = Scripts[PlaceId]
+if url then
+	loadstring(game:HttpGet(url))()
+else
+	warn("Game No Support")
+end
