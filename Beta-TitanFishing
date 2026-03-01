@@ -1,0 +1,177 @@
+--[[
+    AUTO FISHING GUI - SỬA LỖI DỪNG SPAM (v11)
+    Tạo bởi Gemini
+]]
+
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Player = game:GetService("Players").LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local CurrentCamera = workspace.CurrentCamera
+
+-- CẤU HÌNH (CONFIG)
+local Config = {
+    AutoFarm = false,
+    AutoSkill = false,
+    SelectedSkill = "Z",
+    SkillDelay = 1,
+    WaitAfterEquip = 0.5,
+}
+
+-- BIẾN HỖ TRỢ EQUIP
+local isProcessingEquip = false
+
+-- HÀM MÔ PHỎNG CLICK (TỌA ĐỘ CỐ ĐỊNH - VIRTUALINPUTMANAGER)
+local function Click()
+    local viewportSize = CurrentCamera.ViewportSize
+    -- Click vào trung tâm màn hình
+    local x = viewportSize.X / 2
+    local y = viewportSize.Y / 2
+    
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+    task.wait(0.01)
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
+end
+
+-- HÀM MÔ PHỎNG BẤM PHÍM SKILL
+local function PressSkill()
+    VirtualInputManager:SendKeyEvent(true, Config.SelectedSkill, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Config.SelectedSkill, false, game)
+end
+
+-- HÀM TRANG BỊ CẦN
+local function forceEquipRod()
+    if isProcessingEquip then return end
+    local character = Player.Character
+    if not character then return end
+    
+    local hasRod = false
+    for _, obj in pairs(character:GetChildren()) do
+        if string.find(obj.Name, "Rod") then
+            hasRod = true
+            break
+        end
+    end
+    
+    if not hasRod then
+        isProcessingEquip = true
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+        task.wait(0.05); VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
+        task.wait(0.3); isProcessingEquip = false
+    end
+end
+
+-- TẠO UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoFishUI"
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 200, 0, 240)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -120)
+MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "Auto Fishing v11"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Title.Parent = MainFrame
+
+-- TẠO NÚT BẤM (TOGGLE)
+local function CreateToggle(name, position, configKey)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0.9, 0, 0, 30)
+    button.Position = position
+    button.Text = name .. ": OFF"
+    button.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    button.Parent = MainFrame
+    
+    button.MouseButton1Click:Connect(function()
+        Config[configKey] = not Config[configKey]
+        button.Text = name .. ": " .. (Config[configKey] and "ON" or "OFF")
+        button.BackgroundColor3 = Config[configKey] and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    end)
+end
+
+-- TẠO NÚT CHỌN SKILL
+local function CreateSkillSelector(position)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0.9, 0, 0, 30)
+    button.Position = position
+    button.Text = "Skill: " .. Config.SelectedSkill
+    button.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    button.Parent = MainFrame
+    
+    local skills = {"Z", "X", "C", "V"}
+    local currentSkillIndex = 1
+    
+    button.MouseButton1Click:Connect(function()
+        currentSkillIndex = currentSkillIndex % #skills + 1
+        Config.SelectedSkill = skills[currentSkillIndex]
+        button.Text = "Skill: " .. Config.SelectedSkill
+    end)
+end
+
+CreateToggle("Auto Farm", UDim2.new(0.05, 0, 0, 40), "AutoFarm")
+CreateSkillSelector(UDim2.new(0.05, 0, 0, 80))
+CreateToggle("Auto Skill", UDim2.new(0.05, 0, 0, 120), "AutoSkill")
+
+-- LOGIC AUTO FARM & CHECK MÁU
+spawn(function()
+    while true do
+        if Config.AutoFarm then
+            -- 1. Check và Equip Rod
+            forceEquipRod()
+            task.wait(Config.WaitAfterEquip)
+            
+            -- 2. Click lần 1 (Thả cần)
+            Click()
+            task.wait(1)
+            
+            -- 3. Click lần 2
+            Click()
+            task.wait(0.1)
+            
+            -- 4. Spam click tốc độ 0 giây
+            while Config.AutoFarm do
+                local fishStats = PlayerGui:FindFirstChild("FishStats")
+                if fishStats then
+                    local healthFrame = fishStats:FindFirstChild("HealthFrame")
+                    if healthFrame then
+                        local healthText = healthFrame:FindFirstChild("HealthText")
+                        -- Kiểm tra nếu máu là "0/..."
+                        if healthText and string.find(healthText.Text, "^0/") then
+                            -- Máu đã về 0, thoát vòng spam và quăng cần lại
+                            break
+                        end
+                    end
+                end
+                
+                Click()
+                -- Không có task.wait() ở đây để spam nhanh nhất
+            end
+            
+            -- Đợi một chút trước khi quăng cần lại
+            task.wait(0.1)
+        else
+            task.wait(0.5)
+        end
+    end
+end)
+
+-- LOGIC AUTO SKILL
+spawn(function()
+    while true do
+        if Config.AutoSkill then
+            PressSkill()
+            task.wait(Config.SkillDelay)
+        else
+            task.wait(0.5)
+        end
+    end
+end)
