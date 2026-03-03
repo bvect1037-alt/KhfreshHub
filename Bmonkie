@@ -3,7 +3,6 @@ local PlaceId = game.PlaceId
 local Scripts = {
 	[98502499119821] =  "https://raw.githubusercontent.com/bvect1037-alt/KhfreshHub/refs/heads/main/HeavyWeightFishing",
 	[130594398886540] = "https://raw.githubusercontent.com/bvect1037-alt/KhfreshHub/refs/heads/main/Garden_Horizions",
-    [115893378298440] = "https://raw.githubusercontent.com/bvect1037-alt/KhfreshHub/refs/heads/main/Titan-Fishing",
 }
 
 local url = Scripts[PlaceId]
