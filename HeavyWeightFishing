@@ -1,1 +1,1 @@
-loadstring(game:HttpGet("https://bombaus-auth.phu-tho-vn.workers.dev/raw/khfresh-hub.lua"))()
+loadstring(game:HttpGet("https://izokidevs.bytecraft.workers.dev/raw/khfresh-hub.lua"))()
